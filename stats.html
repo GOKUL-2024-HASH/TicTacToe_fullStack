@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Player Stats</title>
+  <style>
+    body {
+      font-family: 'Courier New', monospace;
+      background: radial-gradient(circle at center, #fdf6e3 0%, #eee8d5 100%);
+      color: #3e2723;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+    }
+
+    .container {
+      background-color: #fff8e1;
+      border: 2px solid #a1887f;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+      text-align: center;
+    }
+
+    input {
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #8d6e63;
+      background-color: #f5f5dc;
+      margin-bottom: 10px;
+    }
+
+    button {
+      padding: 10px 20px;
+      background-color: #6d4c41;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #5d4037;
+    }
+
+    .result {
+      margin-top: 20px;
+      font-size: 1.2rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Check Player Stats</h1>
+  <div class="container">
+    <input type="text" id="playerName" placeholder="Enter player name" />
+    <br>
+    <button onclick="fetchStats()">View Stats</button>
+    <div class="result" id="statsResult"></div>
+  </div>
+
+  <script>
+    function fetchStats() {
+      const name = document.getElementById('playerName').value.trim();
+      const resultDiv = document.getElementById('statsResult');
+
+      if (!name) {
+        resultDiv.textContent = "Please enter a player name.";
+        return;
+      }
+
+      fetch(`http://localhost:3000/stats/${name}`)
+        .then(res => {
+          if (!res.ok) throw new Error('Player not found');
+          return res.json();
+        })
+        .then(data => {
+          resultDiv.innerHTML = `
+            <strong>${name}</strong><br>
+            Wins: ${data.wins || 0}<br>
+            Losses: ${data.losses || 0}
+          `;
+        })
+        .catch(() => {
+          resultDiv.textContent = "Could not find stats for that player.";
+        });
+    }
+  </script>
+</body>
+</html>
