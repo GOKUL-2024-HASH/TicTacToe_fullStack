@@ -10,6 +10,9 @@ let gameMode = 'ai';
 let player1Name = "";
 let player2Name = "";
 
+// Choose between "normal" or "unbeatable" AI
+let aiDifficulty = "unbeatable"; 
+
 function setPlayers() {
   player1Name = document.getElementById("player1").value.trim() || "Player 1";
   const player2Input = document.getElementById("player2");
@@ -27,7 +30,6 @@ function setPlayers() {
 
 function handleCellClick(e) {
   const clickedCell = e.target;
-  const clickedIndex = parseInt(clickedCell.getAttribute('data-index'));
 
   if (!gameActive || clickedCell.textContent !== '') return;
 
@@ -43,6 +45,7 @@ function handleCellClick(e) {
   if (isDraw()) {
     gameActive = false;
     statusDisplay.textContent = "It's a draw!";
+    recordResult('draw'); // <-- Track draw
     return;
   }
 
@@ -57,28 +60,91 @@ function handleCellClick(e) {
 function aiMove() {
   if (!gameActive) return;
 
-  for (let i = 0; i < 9; i++) {
-    if (cells[i].textContent === '') {
-      cells[i].textContent = 'O';
-
-      if (checkWin()) {
-        gameActive = false;
-        statusDisplay.textContent = `${player2Name} wins!`;
-        recordResult('loss');
-        return;
+  if (aiDifficulty === "normal") {
+    // Easy AI — picks first available cell
+    for (let i = 0; i < 9; i++) {
+      if (cells[i].textContent === '') {
+        cells[i].textContent = 'O';
+        break;
       }
-
-      if (isDraw()) {
-        gameActive = false;
-        statusDisplay.textContent = "It's a draw!";
-        return;
-      }
-
-      currentPlayer = 'X';
-      statusDisplay.textContent = `${player1Name}'s turn`;
-      break;
     }
+  } else {
+    // Unbeatable AI using Minimax
+    let bestScore = -Infinity;
+    let move;
+    for (let i = 0; i < 9; i++) {
+      if (cells[i].textContent === '') {
+        cells[i].textContent = 'O';
+        let score = minimax(cells, 0, false);
+        cells[i].textContent = '';
+        if (score > bestScore) {
+          bestScore = score;
+          move = i;
+        }
+      }
+    }
+    cells[move].textContent = 'O';
   }
+
+  if (checkWin()) {
+    gameActive = false;
+    statusDisplay.textContent = `${player2Name} wins!`;
+    recordResult('loss');
+    return;
+  }
+
+  if (isDraw()) {
+    gameActive = false;
+    statusDisplay.textContent = "It's a draw!";
+    recordResult('draw'); // <-- Track draw
+    return;
+  }
+
+  currentPlayer = 'X';
+  statusDisplay.textContent = `${player1Name}'s turn`;
+}
+
+function minimax(boardCells, depth, isMaximizing) {
+  if (checkWinnerForAI('O')) return 10 - depth;
+  if (checkWinnerForAI('X')) return depth - 10;
+  if ([...boardCells].every(cell => cell.textContent !== '')) return 0;
+
+  if (isMaximizing) {
+    let bestScore = -Infinity;
+    for (let i = 0; i < 9; i++) {
+      if (boardCells[i].textContent === '') {
+        boardCells[i].textContent = 'O';
+        let score = minimax(boardCells, depth + 1, false);
+        boardCells[i].textContent = '';
+        bestScore = Math.max(score, bestScore);
+      }
+    }
+    return bestScore;
+  } else {
+    let bestScore = Infinity;
+    for (let i = 0; i < 9; i++) {
+      if (boardCells[i].textContent === '') {
+        boardCells[i].textContent = 'X';
+        let score = minimax(boardCells, depth + 1, true);
+        boardCells[i].textContent = '';
+        bestScore = Math.min(score, bestScore);
+      }
+    }
+    return bestScore;
+  }
+}
+
+function checkWinnerForAI(player) {
+  const winPatterns = [
+    [0, 1, 2], [3, 4, 5], [6, 7, 8],
+    [0, 3, 6], [1, 4, 7], [2, 5, 8],
+    [0, 4, 8], [2, 4, 6]
+  ];
+  return winPatterns.some(([a, b, c]) =>
+    cells[a].textContent === player &&
+    cells[b].textContent === player &&
+    cells[c].textContent === player
+  );
 }
 
 function checkWin() {
@@ -138,7 +204,10 @@ function recordResult(result) {
   if (!player1Name || !player2Name) return;
 
   if (gameMode === '2player') {
-    if (currentPlayer === 'X') {
+    if (result === 'draw') {
+      record(player1Name, 'draw');
+      record(player2Name, 'draw');
+    } else if (currentPlayer === 'X') {
       record(player1Name, 'win');
       record(player2Name, 'loss');
     } else {
