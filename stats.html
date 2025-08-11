@@ -84,7 +84,8 @@
           resultDiv.innerHTML = `
             <strong>${name}</strong><br>
             Wins: ${data.wins || 0}<br>
-            Losses: ${data.losses || 0}
+            Losses: ${data.losses || 0}<br>
+            Draws: ${data.draws || 0}
           `;
         })
         .catch(() => {
